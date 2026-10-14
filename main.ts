@@ -219,6 +219,122 @@ namespace electrokitIR {
         handlers.push(new ButtonHandler(button, callback))
     }
 
+
+    /** Convert a remote command into its printed key label. Returns "-" when no key is known. */
+    function keyLabel(code: number): string {
+        switch (code) {
+            case 0xA2: return "1"
+            case 0x62: return "2"
+            case 0xE2: return "3"
+            case 0x22: return "4"
+            case 0x02: return "5"
+            case 0xC2: return "6"
+            case 0xE0: return "7"
+            case 0xA8: return "8"
+            case 0x90: return "9"
+            case 0x68: return "*"
+            case 0x98: return "0"
+            case 0xB0: return "#"
+            case 0x18: return "↑"
+            case 0x10: return "←"
+            case 0x38: return "✓"
+            case 0x5A: return "→"
+            case 0x4A: return "↓"
+            default: return "-"
+        }
+    }
+
+    /** Name of the button currently held: "↑", "✓", "1", etc.; "-" when idle. */
+    //% blockId=electrokit_ir_active_button_name block="active Electrokit button name"
+    //% group="Information"
+    //% weight=99
+    export function activeButtonName(): string {
+        const now = input.runningTime()
+        if (activeCode < 0 || now - lastSeen > releaseDelay) return "-"
+        return keyLabel(activeCode)
+    }
+
+    /** Name of the last button pressed, even after release. */
+    //% blockId=electrokit_ir_last_button_name block="last Electrokit button name"
+    //% group="Information"
+    //% weight=98
+    export function lastButtonName(): string {
+        return keyLabel(lastCode)
+    }
+
+    /** Name of the last button released. */
+    //% blockId=electrokit_ir_released_button_name block="last released Electrokit button name"
+    //% group="Information"
+    //% weight=97
+    export function lastReleasedButtonName(): string {
+        return keyLabel(lastReleasedCode)
+    }
+
+    /** Display label of a chosen remote key. */
+    //% blockId=electrokit_ir_button_name block="Electrokit button %button name"
+    //% group="Information"
+    //% weight=96
+    export function buttonName(button: ElectrokitButton): string {
+        return keyLabel(button)
+    }
+
+    // The LED matrix cannot reliably render Unicode arrows or a check mark via showString.
+    // Render these keys using native 5x5 images instead.
+    let displayedKey = -2
+
+    /** Show a selected button as one static 5x5 LED symbol. */
+    //% blockId=electrokit_ir_show_button_symbol block="show Electrokit button %button symbol"
+    //% group="Information"
+    //% weight=95
+    export function showButtonSymbol(button: ElectrokitButton): void {
+        if (button === ElectrokitButton.Up) {
+            basic.showArrow(ArrowNames.North)
+        } else if (button === ElectrokitButton.Down) {
+            basic.showArrow(ArrowNames.South)
+        } else if (button === ElectrokitButton.Left) {
+            basic.showArrow(ArrowNames.West)
+        } else if (button === ElectrokitButton.Right) {
+            basic.showArrow(ArrowNames.East)
+        } else if (button === ElectrokitButton.OK) {
+            basic.showIcon(IconNames.Yes)
+        } else if (button === ElectrokitButton.Star) {
+            basic.showLeds(`
+                . . # . .
+                # . # . #
+                . # # # .
+                # . # . #
+                . . # . .
+            `)
+        } else if (button === ElectrokitButton.Hash) {
+            basic.showLeds(`
+                . # . # .
+                # # # # #
+                . # . # .
+                # # # # #
+                . # . # .
+            `)
+        } else if (button >= 0) {
+            basic.showString(keyLabel(button))
+        } else {
+            basic.clearScreen()
+        }
+    }
+
+    /** Show the currently held button as a static symbol; clear on release.
+     * Call this repeatedly inside forever. Only redraws when the button changes.
+     */
+    //% blockId=electrokit_ir_show_active_symbol block="show held Electrokit button symbol"
+    //% group="Information"
+    //% weight=94
+    export function showActiveButtonSymbol(): void {
+        const now = input.runningTime()
+        const key = (activeCode >= 0 && now - lastSeen <= releaseDelay) ? activeCode : -1
+        if (key !== displayedKey) {
+            displayedKey = key
+            showButtonSymbol(key as ElectrokitButton)
+        }
+    }
+
     /** Most recently received button command (-1 before first reception). */
     //% blockId=electrokit_ir_last_button block="last Electrokit button code"
     //% group="Information"

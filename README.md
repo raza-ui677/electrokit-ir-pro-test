@@ -66,3 +66,44 @@ basic.forever(function () {
 ## License
 
 MIT, see LICENSE.
+
+## Human-readable button labels (v1.1.1)
+
+The Information group includes string-valued blocks:
+- **active Electrokit button name**: `UP`, `DOWN`, `LEFT`, `RIGHT`, `OK`, `0`–`9`, `*`, or `#` while held; `-` when idle.
+- **last Electrokit button name**: remembers the most recently pressed key.
+- **last released Electrokit button name**: remembers the last released key.
+- **Electrokit button [Up] name**: converts a selected button to its label.
+
+Example:
+```typescript
+electrokitIR.connect(DigitalPin.P0)
+basic.forever(function () {
+    let name = electrokitIR.activeButtonName()
+    if (name != "-") {
+        basic.showString(name)
+    } else {
+        basic.clearScreen()
+    }
+    basic.pause(100)
+})
+```
+For a stable display without repeated scrolling, update the display only when the label changes.
+
+## Single-symbol 5×5 display (v1.1.2)
+
+The text label blocks now return `↑`, `↓`, `←`, `→` and `✓` for the direction and OK keys. These are suitable for Serial and string comparisons. **Do not use `basic.showString()` to render Unicode arrows/check marks on the LED matrix**: use the display blocks below instead.
+
+- **show Electrokit button [Up] symbol** draws one static 5×5 symbol.
+- **show held Electrokit button symbol** updates the 5×5 display only when the held key changes, and clears it on release. Place it inside `forever`.
+
+```typescript
+electrokitIR.connect(DigitalPin.P0)
+electrokitIR.setReleaseTimeout(350)
+basic.forever(function () {
+    electrokitIR.showActiveButtonSymbol()
+    basic.pause(30)
+})
+```
+
+The 5×5 LED display can only show approximate `*` and `#` glyphs. For motors, avoid relying on infrared reception as the only safety stop.
